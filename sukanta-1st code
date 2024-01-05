@@ -1,0 +1,22 @@
+- name: Copy and install Opsware agent
+    hosts: your_target_hosts
+    become: true
+
+    tasks:
+        - name: Copy Opsware agent package
+            copy:
+                src: /path/to/opsware_agent.rpm
+                dest: /tmp/opsware_agent.rpm
+
+        - name: Install Opsware agent
+            yum:
+                name: /tmp/opsware_agent.rpm
+                state: present
+
+        - name: Configure Opsware agent
+            command: /path/to/opsware_agent_configure.sh
+            register: configure_output
+
+        - name: Debug state
+            debug:
+                var: configure_output
