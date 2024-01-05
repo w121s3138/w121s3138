@@ -1,0 +1,39 @@
+import subprocess
+import datetime
+import time
+def clear_old_print_jobs():
+    while True:
+        # Get the current date and time
+        current_date = datetime.datetime.now()
+
+        # Calculate the date 30 days ago
+        thirty_days_ago = current_date - datetime.timedelta(days=30)
+
+        # Convert the date to the required format for the lpq command
+        formatted_date = thirty_days_ago.strftime("%m/%d/%Y")
+
+        # Run the lpq command to get the list of print jobs
+        lpq_output = subprocess.check_output(["lpq"])
+
+        # Split the output into lines
+        lines = lpq_output.decode().split("\n")
+
+        # Iterate over the lines and check the date of each print job
+        for line in lines:
+            if line.startswith("Rank"):
+                continue
+            job_info = line.split()
+            if len(job_info) >= 4:
+                job_date_str = job_info[3]
+                job_date = datetime.datetime.strptime(job_date_str, "%m/%d/%Y")
+                if job_date < thirty_days_ago:
+                    # Clear the print job using the lprm command
+                    job_number = job_info[0]
+                    subprocess.run(["lprm", job_number])
+
+        # Sleep for 24 hours before checking again
+        time.sleep(24 * 60 * 60)
+
+# Call the function to continuously clear old print jobs
+clear_old_print_jobs()
+#
