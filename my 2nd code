@@ -36,4 +36,4 @@ def clear_old_print_jobs():
 
 # Call the function to continuously clear old print jobs
 clear_old_print_jobs()
-#
+# end of script
