@@ -1,0 +1,51 @@
+
+# FILEPATH: /workspaces/w121s3138/code3/opsware_client.yml
+
+---
+- name: Opsware Client Installation
+    hosts: all
+    become: true
+    tasks:
+        - name: Copy Opsware client file from remote server
+            fetch:
+                src: /path/to/opsware_client.rpm
+                dest: /tmp/opsware_client.rpm
+                flat: yes
+            register: copy_output
+
+        - name: Debug copy output
+            debug:
+                var: copy_output
+
+        - name: Install Opsware client
+            yum:
+                name: /tmp/opsware_client.rpm
+                state: present
+            register: install_output
+
+        - name: Debug install output
+            debug:
+                var: install_output
+
+        - name: Configure Opsware client
+            template:
+                src: opsware_client.conf.j2
+                dest: /etc/opsware/opsware_client.conf
+                owner: root
+                group: root
+                mode: 0644
+            register: configure_output
+
+        - name: Debug configure output
+            debug:
+                var: configure_output
+
+        - name: Restart Opsware client service
+            service:
+                name: opsware_client
+                state: restarted
+            register: restart_output
+
+        - name: Debug restart output
+            debug:
+                var: restart_output
