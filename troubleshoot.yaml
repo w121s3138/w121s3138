@@ -1,0 +1,89 @@
+---
+- name: Troubleshooting Linux Advanced Reports
+  hosts: client
+  gather_facts: true
+
+  tasks:
+    - name: Identify the OS and version
+      command: cat /etc/os-release
+      register: os_info
+
+    # Separate tasks for RHEL 6, 7, and 8
+    - name: Check the message log for the last five days
+      command: journalctl --since "5 days ago"
+      register: message_log
+      ignore_errors: yes
+
+    - name: Collect disk usages
+      command: df -h
+      register: disk_usages
+      ignore_errors: yes
+
+    - name: Collect top usages
+      shell: |
+        top -bn1 | head -n 20
+      register: top_usages
+      ignore_errors: yes
+
+    - name: Collect network information
+      command: ip addr show
+      register: network_info
+      ignore_errors: yes
+
+    - name: Display routes
+      command: ip route show
+      register: routes
+      ignore_errors: yes
+
+    - name: Determine if an unexpected reboot or shutdown occurred
+      shell: last -x | grep -E 'reboot|shutdown'
+      register: reboot_shutdown
+      ignore_errors: yes
+
+    - name: List the top five processes consuming CPU and memory
+      shell: ps -eo pid,ppid,cmd,%mem,%cpu --sort=-%mem,-%cpu | head -n 6
+      register: top_processes
+      ignore_errors: yes
+
+    - name: Display filesystems with less than 5% free space
+      shell: df -h | awk '$5 ~ /([0-4][0-9]|100)%/'
+      register: low_free_space
+      ignore_errors: yes
+
+    - name: Capture output in HTML format
+      shell: echo "{{ 4troubleshoot.yaml }} output" > /tmp/output.html
+      delegate_to: localhost
+
+    - name: Fetch HTML file from client to Ansible control server
+      fetch:
+        src: /tmp/output.html
+        dest: /tmp/output.html
+      delegate_to: localhost
+
+    - name: Send email with HTML file as attachment
+      mail:
+        host: localhost
+        port: 25
+        subject: "Troubleshooting Report"
+        body: "Please find the attached HTML report."
+        to: "{{ email_id }}"
+      delegate_to: localhost
+
+    - name: Create /tmp/ansible directory
+      file:
+        path: /tmp/ansible
+        state: directory
+
+    - name: Copy output.html to /tmp/ansible
+      copy:
+        src: /tmp/output.html
+        dest: /tmp/ansible/output.html
+
+    - name: Send email with HTML file as attachment (second email)
+      mail:
+        host: localhost
+        port: 25
+        subject: "Troubleshooting Report (Second Email)"
+        body: "Please find the attached HTML report."
+        to: "{{ email_id }}"
+      delegate_to: localhost
